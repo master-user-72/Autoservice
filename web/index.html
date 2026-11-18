@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Агент запчастей</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png" />
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/static/styles.css?v=layout8" />
+</head>
+<body>
+  <header class="top">
+    <div>
+      <p class="eyebrow">Локальный помощник</p>
+      <h1>Заказ запчастей по VIN</h1>
+    </div>
+    <div class="top-controls">
+      <a id="homeBtn" class="top-link hidden" href="/">На главную</a>
+      <a id="archiveOpen" class="top-link" href="/archive">Архив заявок</a>
+      <label class="switch">
+        <input type="checkbox" id="trainingToggle" checked />
+        <span>Режим обучения</span>
+      </label>
+      <label class="time">
+        Лот
+        <input type="time" id="sendTime" value="16:00" />
+      </label>
+      <div class="meta" id="supplierMeta"></div>
+    </div>
+  </header>
+
+  <main id="homeMain" class="grid">
+    <div class="col col-left">
+    <section class="panel voice">
+      <h2>Заявка руководителя</h2>
+      <p class="hint">Нажмите «Говорить» или введите заявку в поле. Затем «Отправить заявку».</p>
+      <button id="micBtn" class="mic" type="button">Говорить</button>
+      <textarea id="liveText" class="live" rows="3" placeholder="Голос или текст: госномер или VIN и список деталей. Ctrl+Enter — отправить."></textarea>
+      <button id="sendVoice" type="button" class="primary">Отправить заявку</button>
+      <div id="question" class="question hidden"></div>
+    </section>
+
+    <section class="panel garage">
+      <h2>Гараж</h2>
+      <p class="hint">Марка, модель и мотор подсказываются из базы. Если ввести вручную и сохранить — запись попадёт в базу для следующих машин.</p>
+      <div class="garage-form">
+        <input id="gVin" type="text" maxlength="17" placeholder="VIN, 17 знаков" autocomplete="off" />
+        <input id="gMake" type="text" list="makeList" placeholder="Марка" autocomplete="off" />
+        <input id="gPlate" type="text" placeholder="Госномер, А123АА72" autocomplete="off" />
+        <input id="gModel" type="text" list="modelList" placeholder="Модель" autocomplete="off" />
+        <input id="gYear" type="text" list="yearList" placeholder="Год" autocomplete="off" />
+        <input id="gEngine" type="text" list="engineList" placeholder="Двигатель" autocomplete="off" />
+        <input id="gBody" type="text" list="bodyList" placeholder="Кузов" autocomplete="off" />
+        <datalist id="makeList"></datalist>
+        <datalist id="modelList"></datalist>
+        <datalist id="yearList"></datalist>
+        <datalist id="engineList"></datalist>
+        <datalist id="bodyList"></datalist>
+        <button id="gSave" type="button" class="primary">Сохранить</button>
+      </div>
+      <details id="kitBox" class="kit-box">
+        <summary>Загрузить артикулы комплекта</summary>
+        <p class="hint">Только в режиме обучения. Укажите VIN или марку/модель/мотор. Одна строка — один артикул, можно с названием.</p>
+        <input id="kitName" type="text" placeholder="Название комплекта" value="Комплект ГРМ" />
+        <textarea id="kitText" rows="6" placeholder="13568-22020 ремень ГРМ&#10;13505-0H010 ролик натяжной&#10;16100-63J00 помпа"></textarea>
+        <button id="kitLoad" type="button" class="primary">Загрузить артикулы</button>
+        <p class="hint" id="kitStatus"></p>
+      </details>
+      <button id="gToggle" type="button">Показать список</button>
+      <input id="gSearch" class="hidden" type="text" placeholder="Поиск: марка, номер или только цифры" />
+      <ul id="garageList" class="hidden"></ul>
+    </section>
+
+    <section class="panel log">
+      <h2>Лента</h2>
+      <ul id="eventList"></ul>
+    </section>
+    </div>
+
+    <div class="col col-right">
+    <section id="urgentPanel" class="panel urgent hidden">
+      <h2>Срочные</h2>
+      <p class="hint">Вне дневного лота. В обучении — сначала подтверждение, затем отправка на сайт.</p>
+      <div id="urgentList" class="cards"></div>
+    </section>
+
+    <section class="panel lot">
+      <div class="lot-head">
+        <h2>Лот дня</h2>
+        <span class="badge" id="lotStatus">collecting</span>
+      </div>
+      <p class="hint" id="lotHint"></p>
+      <div class="actions">
+        <button id="confirmAll" type="button">Подтвердить все</button>
+        <button id="approveSend" type="button" class="primary">Подтвердить отправку лота</button>
+        <button id="runDue" type="button">Проверить слот времени</button>
+        <button id="manualSend" type="button">Отправить вручную</button>
+      </div>
+      <table id="lotTable" class="lot-table">
+        <thead>
+          <tr>
+            <th id="lotPickHead" class="pick-col" aria-label="Выбор"></th>
+            <th>Деталь</th>
+            <th>Поставщик</th>
+            <th>Артикул</th>
+            <th>Кол-во</th>
+            <th>Срок</th>
+            <th>Цена</th>
+            <th>Статус</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="lotBody"></tbody>
+      </table>
+    </section>
+    </div>
+  </main>
+
+  <main id="archiveMain" class="archive-page hidden">
+    <section class="panel archive">
+      <div class="archive-head">
+        <h2>Архив заявок</h2>
+        <label class="archive-bar">
+          Дата
+          <input type="date" id="archiveDate" />
+        </label>
+      </div>
+      <p class="hint">Повторная отправка кладёт заявку в сегодняшний лот.</p>
+      <ul id="archiveList"></ul>
+    </section>
+  </main>
+
+  <div id="statusModal" class="modal hidden">
+    <div class="modal-card status-card">
+      <h3 id="statusTitle">Заявка</h3>
+      <p class="hint" id="statusSubtitle"></p>
+      <ol id="statusSteps" class="status-steps"></ol>
+      <div id="statusErrors" class="status-errors hidden"></div>
+      <div id="statusWarnings" class="status-warns hidden"></div>
+      <div class="actions">
+        <button id="statusClose" type="button" class="primary">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="replaceModal" class="modal hidden">
+    <div class="modal-card">
+      <h3>Заменить позицию</h3>
+      <input id="replaceText" type="text" placeholder="Новое описание для поиска" />
+      <div class="actions">
+        <button id="replaceCancel" type="button">Отмена</button>
+        <button id="replaceOk" type="button" class="primary">Подобрать</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=launcher5"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+16:37:59 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект деталей для то номер пять'] nonstandard=True llm=True
+16:37:59 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:38:38 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:38:38 INFO [agent.llm] LLM переключение на запасной провайдер
+16:38:39 WARNING [agent.llm] LLM qwen HTTP 401: {"error":{"message":"Incorrect API key provided. For details, see: https://www.alibabacloud.com/help/en/model-studio/error-code#apikey-error","type":"invalid_request_error","param":null,"code":"invalid_api_key"},"request_id":"e25bb902-88b1-97df-bb97-d74416cc56ed"}
+16:38:39 WARNING [agent.llm] LLM qwen недоступен: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:38:39 WARNING [agent.nlu] LLM разбор не удался, локальный fallback: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:38:39 INFO [agent.nlu] итог локальный: items=['комплект деталей для то номер пять']
+16:38:47 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['???????? ??????? ??? ?? ????? ????'] nonstandard=True llm=True
+16:38:47 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:39:27 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:39:27 INFO [agent.llm] LLM переключение на запасной провайдер
+16:39:28 WARNING [agent.llm] LLM qwen HTTP 401: {"error":{"message":"Incorrect API key provided. For details, see: https://www.alibabacloud.com/help/en/model-studio/error-code#apikey-error","type":"invalid_request_error","param":null,"code":"invalid_api_key"},"request_id":"63205e24-caef-9854-a9ed-704305f3f8d7"}
+16:39:28 WARNING [agent.llm] LLM qwen недоступен: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:39:28 WARNING [agent.nlu] LLM разбор не удался, локальный fallback: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:39:28 INFO [agent.nlu] итог локальный: items=['???????? ??????? ??? ?? ????? ????']
+16:42:06 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект деталей для то номер пять'] nonstandard=True llm=True
+16:42:06 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:42:45 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:42:45 INFO [agent.llm] LLM переключение на запасной провайдер
+16:42:47 WARNING [agent.llm] LLM qwen HTTP 401: {"error":{"message":"Incorrect API key provided. For details, see: https://www.alibabacloud.com/help/en/model-studio/error-code#apikey-error","type":"invalid_request_error","param":null,"code":"invalid_api_key"},"request_id":"da14c6cf-6bb0-95b7-9729-aa8b7ee4b5f9"}
+16:42:47 WARNING [agent.llm] LLM qwen недоступен: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:42:47 WARNING [agent.nlu] LLM разбор не удался, локальный fallback: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:42:47 INFO [agent.nlu] итог локальный: items=['комплект деталей для то номер пять']
+16:44:44 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект деталей для то номер пять'] nonstandard=True llm=True
+16:44:44 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:45:22 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:45:22 INFO [agent.llm] LLM переключение на запасной провайдер
+16:45:24 WARNING [agent.llm] LLM qwen HTTP 401: {"error":{"message":"Incorrect API key provided. For details, see: https://www.alibabacloud.com/help/en/model-studio/error-code#apikey-error","type":"invalid_request_error","param":null,"code":"invalid_api_key"},"request_id":"2e046440-e4b1-9c84-841e-bf1ebc36606a"}
+16:45:24 WARNING [agent.llm] LLM qwen недоступен: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:45:24 WARNING [agent.nlu] LLM разбор не удался, локальный fallback: HTTPStatusError: Client error '401 Unauthorized' for url 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+16:45:24 INFO [agent.nlu] итог локальный: items=['комплект деталей для то номер пять']
+16:45:34 WARNING [agent.llm] LLM qwen HTTP 401: {"error":{"message":"Incorrect API key provided. For details, see: https://www.alibabacloud.com/help/en/model-studio/error-code#apikey-error","type":"invalid_request_error","param":null,"code":"invalid_api_key"},"request_id":"b36c48f1-0732-97b7-abce-93341d46f688"}
+16:45:48 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект деталей для то номер пять'] nonstandard=True llm=True
+16:45:48 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:46:27 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:46:27 INFO [agent.llm] LLM переключение на запасной провайдер
+16:46:31 INFO [agent.llm] LLM qwen OK model=qwen-plus
+16:46:31 INFO [agent.nlu] LLM разбор OK: items=['комплект деталей для ТО №5']
+16:47:27 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект деталей для то номер пять'] nonstandard=True llm=True
+16:47:27 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:48:06 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:48:06 INFO [agent.llm] LLM переключение на запасной провайдер
+16:48:10 INFO [agent.llm] LLM qwen OK model=qwen-plus
+16:48:10 INFO [agent.nlu] LLM разбор OK: items=['комплект деталей для ТО №5']
+16:56:01 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект деталей для то номер пять'] nonstandard=True llm=True
+16:56:01 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:56:40 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:56:40 INFO [agent.llm] LLM переключение на запасной провайдер
+16:56:45 INFO [agent.llm] LLM qwen OK model=qwen-plus
+16:56:45 INFO [agent.nlu] LLM разбор OK: items=['комплект деталей для ТО №5']
+16:56:45 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['фильтр масляный', 'фильтр салонный', 'свечи'] nonstandard=False llm=True
+16:56:45 INFO [agent.nlu] итог локальный: items=['фильтр масляный', 'фильтр салонный', 'свечи']
+16:56:45 INFO [agent.nlu] локальный разбор: make=None plate=А123АА72 items=['колодки передние тормозные'] nonstandard=False llm=True
+16:56:45 INFO [agent.nlu] итог локальный: items=['колодки передние тормозные']
+16:56:45 INFO [agent.nlu] локальный разбор: make=None plate=None items=['подобрать всё для замены ГРМ'] nonstandard=True llm=True
+16:56:45 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:57:24 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:57:24 INFO [agent.llm] LLM переключение на запасной провайдер
+16:57:27 INFO [agent.llm] LLM qwen OK model=qwen-plus
+16:57:27 INFO [agent.nlu] LLM разбор OK: items=['комплект ГРМ']
+16:57:27 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['масло моторное 5w30', 'фильтр масляный'] nonstandard=False llm=True
+16:57:27 INFO [agent.nlu] итог локальный: items=['масло моторное 5w30', 'фильтр масляный']
+16:57:27 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['на комплект ТО:', 'масло', 'фильтр масляный', 'фильтр воздушный', 'свечи'] nonstandard=True llm=True
+16:57:27 INFO [agent.llm] LLM цепочка: yandex → qwen
+16:58:06 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+16:58:06 INFO [agent.llm] LLM переключение на запасной провайдер
+16:58:10 INFO [agent.llm] LLM qwen OK model=qwen-plus
+16:58:10 INFO [agent.nlu] LLM разбор OK: items=['масло моторное', 'фильтр масляный', 'фильтр воздушный', 'свечи зажигания']
+22:46:36 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['сальник хвостовика', 'акпп'] nonstandard=False llm=True
+22:46:36 INFO [agent.nlu] итог локальный: items=['сальник хвостовика', 'акпп']
+22:48:06 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект запчастей для замены цепи грм'] nonstandard=True llm=True
+22:48:06 INFO [agent.llm] LLM цепочка: yandex → qwen
+22:48:07 WARNING [agent.llm] LLM yandex HTTP 403: {"error":{"message":"rpc error: code = InvalidArgument desc = Specified folder ID 'aje11sokt01q5iqoqcig' does not match with service account folder ID 'b1g7le9821tus8gscoi4'","type":"permission_error"}} 
+22:48:07 WARNING [agent.llm] LLM yandex недоступен: HTTPStatusError: Client error '403 Forbidden' for url 'https://ai.api.cloud.yandex.net/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+22:48:07 INFO [agent.llm] LLM переключение на запасной провайдер
+22:48:10 INFO [agent.llm] LLM qwen OK model=qwen-plus
+22:48:10 INFO [agent.nlu] LLM разбор OK: items=['комплект ГРМ']
+23:08:10 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект запчастей для замены цепи распредвала'] nonstandard=True llm=True
+23:08:10 INFO [agent.llm] LLM цепочка: yandex → qwen
+23:08:12 INFO [agent.llm] LLM yandex OK model=gpt://b1g7le9821tus8gscoi4/yandexgpt-lite/latest
+23:08:12 INFO [agent.nlu] LLM разбор OK: items=['комплект запчастей для замены цепи распредвала']
+23:12:59 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект запчастей для замены цепи распредвала'] nonstandard=True llm=True
+23:12:59 INFO [agent.llm] LLM цепочка: yandex → qwen
+23:13:38 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+23:13:38 INFO [agent.llm] LLM переключение на запасной провайдер
+23:13:43 INFO [agent.llm] LLM qwen OK model=qwen-plus
+23:13:43 INFO [agent.nlu] LLM разбор OK: items=['комплект ГРМ']
+23:27:12 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['комплект запчастей для замены цепи распредвала'] nonstandard=True llm=True
+23:27:12 INFO [agent.nlu] LLM контекст: vin=JSAJTD54V00300140 spec=JSAJTD540
+23:27:12 INFO [agent.llm] LLM цепочка: yandex → qwen
+23:27:15 INFO [agent.llm] LLM yandex OK model=gpt://b1g7le9821tus8gscoi4/yandexgpt-lite/latest
+23:27:15 INFO [agent.nlu] LLM разбор OK: items=['цепь ГРМ', 'натяжитель цепи ГРМ', 'успокоитель цепи ГРМ', 'направляющая цепи ГРМ', 'прокладка клапанной крышки', 'болты клапанной крышки']
+23:34:00 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['свечи зажигания'] nonstandard=False llm=True
+23:34:00 INFO [agent.nlu] итог локальный: items=['свечи зажигания']
+23:34:37 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['свечи зажигания'] nonstandard=False llm=True
+23:34:37 INFO [agent.nlu] итог локальный: items=['свечи зажигания']
+00:32:13 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['ремень генератора гейтс'] nonstandard=True llm=True
+00:32:13 INFO [agent.nlu] LLM контекст: vin=JSAJTD54V00300140 spec=JSAJTD540
+00:32:13 INFO [agent.llm] LLM цепочка: yandex → qwen
+00:32:22 WARNING [agent.llm] LLM yandex недоступен: ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+00:32:22 INFO [agent.llm] LLM переключение на запасной провайдер
+00:32:26 INFO [agent.llm] LLM qwen OK model=qwen-plus
+00:32:26 INFO [agent.nlu] LLM разбор OK: items=['ремень генератора Gates']
+12:59:09 INFO [agent.nlu] локальный разбор: make=Suzuki plate=227 items=['масляный', 'фильтр воздушный', 'фильтр топливный', 'фильтр'] nonstandard=True llm=True
+12:59:09 INFO [agent.nlu] LLM контекст: vin=JSAJTD54V00300140 spec=JSAJTD540
+12:59:09 INFO [agent.llm] LLM цепочка: yandex → qwen
+12:59:12 INFO [agent.llm] LLM yandex OK model=gpt://b1g7le9821tus8gscoi4/yandexgpt-lite/latest
+12:59:12 INFO [agent.nlu] LLM разбор OK: items=['масляный', 'фильтр', 'воздушный', 'фильтр', 'топливный', 'фильтр']
