@@ -7,7 +7,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from app import access, db, garage, workspace as ws
+from app import access, catalog, db, garage, workspace as ws
 from app.nlu import preview_parts
 from app.suppliers import workspace_demo as demo
 from app.workspace_db import VERSION, transaction
@@ -25,6 +25,7 @@ class VehicleInput(BaseModel):
     vin: str
     make: str = Field(max_length=80)
     model: str = Field(max_length=100)
+    generation: str = Field(default="", max_length=32)
     plate: str = Field(default="", max_length=20)
     year: str = Field(default="", max_length=4)
     engine: str = Field(default="", max_length=100)
@@ -158,13 +159,18 @@ def read_notifications(request: Request):
     return {"ok": True}
 
 
+@router.get("/vehicle-catalog")
+def vehicle_catalog():
+    return catalog.vehicle_catalog()
+
+
 @router.get("/vehicles")
 def vehicles(q: str = "", archived: bool = False):
     with transaction() as conn:
         rows = ws.read(conn, """SELECT v.*, (SELECT count(*) FROM requests r WHERE r.vin=v.vin) AS request_count
                               FROM vehicles v WHERE archived=? ORDER BY make,model,vin""", (archived,))
         return [row for row in rows if q.casefold().strip() in
-                " ".join(row[key] for key in ("vin", "plate", "make", "model")).casefold()]
+                " ".join(row[key] for key in ("vin", "plate", "make", "model", "generation")).casefold()]
 
 
 @router.get("/vehicles/{vin}")
@@ -182,6 +188,8 @@ def vehicle_detail(vin: str):
 def save_vehicle(request: Request, body: VehicleInput):
     actor = access.permitted(request)
     data = body.model_dump(exclude={"revision"})
+    if "generation" not in body.model_fields_set:
+        data.pop("generation")
     data = {key: value.strip() for key, value in data.items()}
     vin = data["vin"] = data["vin"].upper()
     ws.require(re.fullmatch(r"[A-HJ-NPR-Z0-9]{17}", vin), "VIN должен состоять из 17 знаков без I, O, Q", 422)
@@ -202,7 +210,7 @@ def save_vehicle(request: Request, body: VehicleInput):
             ws.require(existing["revision"] == body.revision, "Такой VIN уже есть или запись изменилась")
             conn.execute(f"UPDATE vehicles SET {','.join(key+'=?' for key in fields)},"
                          "updated_at=?,revision=revision+1 WHERE vin=?", (*values, timestamp, vin))
-            if any(existing[key] != data[key] for key in ("make", "model", "year", "engine", "body")):
+            if any(existing[key] != data[key] for key in data if key not in {"vin", "plate"}):
                 ws.invalidate_vehicle(conn, vin)
         else:
             ws.require(body.revision is None, "Автомобиль не найден", 404)

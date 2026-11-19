@@ -374,7 +374,8 @@ def confirm_retry(conn, actor, payload, allow_unknown):
         row = item(conn, line["id"])
         car = vehicle(conn, line["vehicle"]["vin"])
         require(car and not car["archived"]
-                and all(car[k] == line["vehicle"][k] for k in ("make", "model", "year", "engine", "body")),
+                and all(car[k] == line["vehicle"].get(k, "")
+                        for k in ("make", "model", "generation", "year", "engine", "body")),
                 "Автомобиль изменился. Для новой закупки создайте заявку.")
         old = line["offer"]
         part = demo.catalogue_match(old["catalogue"])

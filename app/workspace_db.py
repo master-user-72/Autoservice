@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from app import db
 
-VERSION = 1
+VERSION = 2
 
 COLUMNS = {
     "requests": {
@@ -27,6 +27,7 @@ COLUMNS = {
         "dispatch_scenario": "TEXT NOT NULL DEFAULT 'normal'",
     },
     "vehicles": {
+        "generation": "TEXT NOT NULL DEFAULT ''",
         "archived": "INTEGER NOT NULL DEFAULT 0",
         "revision": "INTEGER NOT NULL DEFAULT 1",
     },

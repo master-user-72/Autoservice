@@ -205,3 +205,22 @@ legend { font-weight: 650; }
   .cart-actions .primary { min-height: 38px; }
   .cart .totals { padding-block: 8px; gap: 5px; }
 }
+
+.catalog-field { position: relative; min-width: 0; }
+.catalog-options {
+  position: absolute;
+  inset: calc(100% + 3px) 0 auto;
+  z-index: 4;
+  max-height: 208px;
+  overflow: auto;
+  background: var(--paper);
+  border: 1px solid #bac9df;
+  border-radius: 7px;
+  box-shadow: 0 6px 20px #17243a24;
+}
+.catalog-options.above { inset: auto 0 calc(100% + 3px); }
+.catalog-options [role=option], .catalog-message { padding: 7px 9px; }
+.catalog-options [role=option] { cursor: pointer; }
+.catalog-options [role=option]:is(:hover, [aria-selected=true]) { background: var(--wash); }
+.catalog-options small { margin-left: 8px; }
+.catalog-message { color: var(--muted); }

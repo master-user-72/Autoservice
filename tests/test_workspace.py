@@ -102,6 +102,35 @@ class WorkspaceTest(unittest.TestCase):
         result = self.search(result)
         self.assertTrue(all(o["catalogue"] == "SHK-F-90" for o in result["search_result"]["offers"]))
 
+    def test_vehicle_catalog_seed_and_repeat_startup(self):
+        rows = self.request("GET", "/vehicle-catalog")
+        references = {(row["make"], row["model"], row["generation"]) for row in rows}
+        for value in (
+            ("Audi", "A3", "8L"), ("Volkswagen", "Golf", "IV"), ("Volkswagen", "ID.3", "I"),
+            ("BMW", "3 Series", "E91"), ("BMW", "M5", "G90"), ("Mercedes", "E-Class", "W214"),
+        ):
+            self.assertIn(value, references)
+        self.assertTrue(any(row["model"] == "A3" and row["engine"] == "AGN" and not row["generation"]
+                            for row in rows))
+        self.assertTrue(any(row["model"] == "X5" and row["generation"] == "G05" and row["year"] == "2018-"
+                            for row in rows))
+        e91_bodies = {row["body"] for row in rows if row["model"] == "3 Series" and row["generation"] == "E91"}
+        self.assertEqual(e91_bodies - {""}, {"универсал"})
+        db.init_db()
+        migrate()
+        self.assertEqual(self.request("GET", "/vehicle-catalog"), rows)
+
+    def test_vehicle_generation_saved_and_available_as_hint(self):
+        car = self.request("POST", "/vehicles", {
+            **DEMO_CAR, "generation": "III", "engine": "Учебный двигатель",
+        })["vehicle"]
+        self.assertEqual(car["generation"], "III")
+        saved = self.request("POST", "/vehicles", {**DEMO_CAR, "revision": car["revision"]})["vehicle"]
+        self.assertEqual(saved["generation"], "III")
+        self.assertTrue(any(row["make"] == "Mitsubishi" and row["model"] == "Pajero Sport"
+                            and row["generation"] == "III" and row["engine"] == DEMO_CAR["engine"]
+                            for row in self.request("GET", "/vehicle-catalog")))
+
     def test_garage_validation_and_manual_applicability(self):
         draft = self.example()
         self.request("POST", "/vehicles", {**DEMO_CAR, "vin": "invalid"}, status=422)

@@ -187,9 +187,9 @@ def init_db() -> None:
             digits = "".join(ch for ch in (row["plate"] or "") if ch.isdigit())
             conn.execute("UPDATE vehicles SET plate_digits = ? WHERE vin = ?", (digits, row["vin"]))
         conn.execute("CREATE INDEX IF NOT EXISTS idx_vehicles_digits ON vehicles(plate_digits)")
-        from app.catalog import SEED_TRIMS
+        from app.catalog import seed_catalog
 
-        seed_catalog_trims(SEED_TRIMS, conn)
+        seed_catalog(conn)
 
 
 def _migrate_learned_kits(conn: sqlite3.Connection) -> None:

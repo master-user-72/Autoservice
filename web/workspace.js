@@ -1,3 +1,5 @@
+import { connectVehicleCatalog } from './vehicle-catalog.js';
+
 const icons = {
   car: 'M5 17H3v-5l2-2 2-5h10l2 5 2 2v5h-2M5 17h14M5 17v2H3v-2m16 0v2h2v-2M5 10h14M6 14h2m8 0h2',
   search: 'M21 21l-5-5m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0',
@@ -146,6 +148,7 @@ function dialog(title, html, confirmLabel, submit) {
     }
   };
   if (!modal.open) modal.showModal();
+  return form;
 }
 modal.addEventListener('cancel', event => { if (modal.dataset.busy) event.preventDefault(); });
 
@@ -316,7 +319,7 @@ function render() {
 }
 
 function vehicleCard(car, { request = false, editable = true } = {}) {
-  const name = [car?.make, car?.model].filter(Boolean).join(' ') || 'Автомобиль не выбран';
+  const name = [car?.make, car?.model, car?.generation].filter(Boolean).join(' ') || 'Автомобиль не выбран';
   return `<section class="panel vehicle-banner"><div class="car-art">${svg('car')}</div><div>
     <div class="section-head"><h2 class="vehicle-name">${e(name)}</h2><div class="actions">
       ${car && editable ? button('edit-car', 'Редактировать', { icon: 'pencil' }) : ''}
@@ -472,7 +475,7 @@ function garagePage() {
   const query = new URLSearchParams(location.search);
   const list = table(['VIN', 'Госномер', 'Марка', 'Модель', 'Год', 'Двигатель', 'Кузов', 'Заявки'],
     vehicles.map(v => '<tr>' + cells([
-      link('/garage/' + v.vin + location.search, v.vin), e(valued(v, 'plate')), e(v.make), e(v.model),
+      link('/garage/' + v.vin + location.search, v.vin), e(valued(v, 'plate')), e(v.make), e([v.model, v.generation].filter(Boolean).join(' ')),
       e(valued(v, 'year')), e(valued(v, 'engine')), e(valued(v, 'body')), v.request_count,
     ]) + '</tr>').join(''));
   return `<div class="stack"><div class="panel pad section-head"><form id="garage-filter" class="form-bar">
@@ -704,10 +707,21 @@ function carForm(car, onSaved) {
   const fields = [
     ['VIN','vin','required maxlength="17"'], ['Госномер','plate','maxlength="20"'],
     ['Марка','make','required maxlength="80"'], ['Модель','model','required maxlength="100"'],
-    ['Год','year','inputmode="numeric" maxlength="4"'], ['Двигатель','engine','maxlength="100"'], ['Кузов','body','maxlength="100"'],
+    ['Поколение (код)','generation','maxlength="32"'], ['Год','year','inputmode="numeric" maxlength="4"'],
+    ['Кузов','body','maxlength="100"'], ['Двигатель','engine','maxlength="100"'],
   ];
-  dialog(car ? 'Редактировать автомобиль' : 'Добавить автомобиль',
-    `<div class="field-grid">${fields.map(([title,key,attrs]) => input(title,key,car?.[key],attrs + (car && key === 'vin' ? ' readonly' : ''))).join('')}</div>
+  const controls = fields.map(([title, key, attrs]) => {
+    if (['vin', 'plate'].includes(key)) {
+      return input(title, key, car?.[key], attrs + (car && key === 'vin' ? ' readonly' : ''));
+    }
+    const list = 'catalog-' + key;
+    return `<div class="catalog-field">${input(title,key,car?.[key],attrs +
+      ` role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${list}" autocomplete="off"`)}
+      <div class="catalog-options" id="${list}" role="listbox" aria-label="${title}" hidden></div></div>`;
+  });
+  const form = dialog(car ? 'Редактировать автомобиль' : 'Добавить автомобиль',
+    `<div class="field-grid">${controls.join('')}</div>
+     <p class="muted">Варианты «По модели» и «По поколению» уточняйте для конкретного автомобиля.</p>
      ${car ? '<p class="hint">Изменение автомобиля сбрасывает текущий подбор. Заказы сохраняют свой снимок.</p>' : ''}`,
     'Сохранить автомобиль', async form => {
       const body = Object.fromEntries(form);
@@ -717,6 +731,7 @@ function carForm(car, onSaved) {
       if (saved.warning) notify(saved.warning);
       await onSaved(saved.vehicle);
     });
+  connectVehicleCatalog(form, () => api('/vehicle-catalog'));
 }
 
 async function pickCar() {
@@ -733,9 +748,9 @@ async function pickCar() {
     });
   const update = () => {
     const query = $('#car-query').value.toLowerCase();
-    const rows = cars.filter(c => [c.vin,c.plate,c.make,c.model].join(' ').toLowerCase().includes(query));
+    const rows = cars.filter(c => [c.vin,c.plate,c.make,c.model,c.generation].join(' ').toLowerCase().includes(query));
     $('#car-options').innerHTML = '<option value="">Выберите автомобиль</option>' + rows.map(c =>
-      `<option value="${e(c.vin)}">${e([c.make,c.model,c.plate,c.vin].filter(Boolean).join(' · '))}</option>`).join('');
+      `<option value="${e(c.vin)}">${e([c.make,[c.model,c.generation].filter(Boolean).join(' '),c.plate,c.vin].filter(Boolean).join(' · '))}</option>`).join('');
   };
   $('#car-query').addEventListener('input', update);
   update();

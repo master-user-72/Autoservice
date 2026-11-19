@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from sqlite3 import Connection
 from typing import Any
 
 from app import db, garage
+from data.doc1_catalog import doc1_trims
+from data.garage_catalog import garage_trims, generation_trims
 
 # Типовой рынок РФ: марка, модель, годы, мотор, кузов.
 SEED_TRIMS: list[tuple[str, str, str, str, str]] = [
@@ -87,8 +90,37 @@ SEED_TRIMS: list[tuple[str, str, str, str, str]] = [
 ]
 
 
-def seed_catalog() -> None:
-    db.seed_catalog_trims(SEED_TRIMS)
+def seed_catalog(conn: Connection | None = None) -> None:
+    db.seed_catalog_trims([*SEED_TRIMS, *doc1_trims(), *garage_trims()], conn)
+
+
+def vehicle_catalog() -> list[dict[str, str]]:
+    generations = {}
+    bmw_bodies = {}
+    for make, model, generation, _, _, body in generation_trims():
+        key = (make.casefold(), f"{model} {generation}".casefold())
+        generations[key] = (model, generation)
+        if make == "BMW" and body:
+            bmw_bodies[key] = body
+    with db.locked() as conn:
+        trims = conn.execute("SELECT make,model,year,engine,body FROM catalog_trims").fetchall()
+        cars = conn.execute("""SELECT DISTINCT make,model,generation,year,engine,body
+                               FROM vehicles WHERE archived=0 AND make!='' AND model!=''""").fetchall()
+
+    fields = ("make", "model", "generation", "year", "engine", "body")
+    unique = {}
+    for row in [*cars, *trims]:
+        from_catalog = "generation" not in row.keys()
+        car = {"generation": "", **dict(row)}
+        key = (car["make"].casefold(), car["model"].casefold())
+        if from_catalog and key in bmw_bodies and car["body"]:
+            # The previous import expanded BMW body types across a whole generation group.
+            car["body"] = bmw_bodies[key]
+        if key in generations and not car["generation"]:
+            car["model"], car["generation"] = generations[key]
+        key = tuple(car[field].strip().casefold() for field in fields)
+        unique.setdefault(key, car)
+    return list(unique.values())
 
 
 def remember_trim(*, make: str = "", model: str = "", year: str = "", engine: str = "", body: str = "") -> None:
