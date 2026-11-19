@@ -476,72 +476,45 @@ def replace_item(item_id: int, description: str) -> dict[str, Any]:
 
 
 def send_items(item_ids: list[int], urgent: bool = False) -> dict[str, Any]:
+    from app.suppliers.mock import MockSupplier
+    from app.workspace_db import transaction
+
     adapter = get_adapter()
-    offers: list[Offer] = []
-    rows: list[dict[str, Any]] = []
-    for item_id in item_ids:
-        item = db.get_item(item_id)
-        if not item or item["status"] in {"rejected", "sent", "supplier_unknown"}:
-            continue
-        if not (item.get("supplier") or "").strip():
-            continue
-        rows.append(item)
-        offers.append(
-            Offer(
-                article=item["article"] or "",
-                name=item["name"] or item["description"],
-                delivery_days=int(item["delivery_days"] or 0),
-                price=float(item["price"] or 0),
-                currency=item.get("currency") or "RUB",
-                is_original=bool(item["is_original"]),
-                supplier=item.get("supplier") or "",
-                warning=item.get("warning"),
-                quantity=max(1, min(99, int(item.get("quantity") or 1))),
-            )
-        )
-    if not offers:
-        return {"ok": False, "error": "нет позиций к отправке"}
+    if not isinstance(adapter, MockSupplier):
+        return {"ok": False, "error": "Подтверждённого канала оформления нет. Проверьте условия у поставщика."}
+    with transaction() as conn:
+        rows = []
+        for item_id in dict.fromkeys(item_ids):
+            row = conn.execute(
+                """SELECT * FROM line_items WHERE id=? AND status IN ('confirmed','pending_review')
+                   AND urgent=? AND supplier IS NOT NULL AND supplier!=''""", (item_id, urgent),
+            ).fetchone()
+            if row:
+                rows.append(dict(row))
+                conn.execute("UPDATE line_items SET status='sending' WHERE id=?", (item_id,))
+    if not rows:
+        return {"ok": False, "error": "Нет доступных позиций. Проверьте историю отправки."}
 
-    result = adapter.place_order(offers)
-    by_map = (result.details or {}).get("by_supplier") or {}
-    if by_map:
-        ok_n = 0
-        fail_n = 0
-        refs = []
-        for item in rows:
-            ref = by_map.get(item.get("supplier"))
-            if ref:
-                db.update_item(item["id"], status="sent", order_ref=ref)
-                ok_n += 1
-                refs.append(ref)
-            else:
-                db.update_item(item["id"], status="failed")
-                fail_n += 1
-        kind = "срочный заказ" if urgent else "лот"
-        if ok_n:
-            sent_rows = [row for row in rows if by_map.get(row.get("supplier"))]
-            summary = _order_lines_summary(sent_rows)
-            db.add_event(
-                f"Оформлен {kind} ({CITY}): {', '.join(dict.fromkeys(refs))} · {ok_n} поз."
-                + (f" ({summary})" if summary else "")
-                + (f", ошибок {fail_n}" if fail_n else "")
-            )
-            return {"ok": True, "order_ref": result.order_ref, "count": ok_n, "failed": fail_n, "error": result.error}
-        db.add_event(result.error or "ошибка оформления", "error")
-        return {"ok": False, "error": result.error or "не отправлено"}
+    offers = [Offer(
+        article=row["article"] or "", name=row["name"] or row["description"],
+        delivery_days=int(row["delivery_days"] or 0), price=float(row["price"] or 0),
+        currency=row["currency"] or "RUB", is_original=bool(row["is_original"]),
+        supplier=row["supplier"], quantity=row["quantity"],
+    ) for row in rows]
+    try:
+        result = adapter.place_order(offers)
+    except Exception:
+        with transaction() as conn:
+            conn.executemany("UPDATE line_items SET status='outcome_unknown' WHERE id=?", [(r["id"],) for r in rows])
+        db.add_event("Ответ учебного поставщика неизвестен. Повтор заблокирован.", "warn")
+        return {"ok": False, "error": "Неизвестный результат. Проверьте исход оформления."}
 
+    with transaction() as conn:
+        conn.executemany("UPDATE line_items SET status=?, order_ref=? WHERE id=?",
+                         [("sent" if result.ok else "failed", result.order_ref, row["id"]) for row in rows])
     if result.ok:
-        for item in rows:
-            db.update_item(item["id"], status="sent", order_ref=result.order_ref)
-        kind = "срочный заказ" if urgent else "лот"
-        summary = _order_lines_summary(rows)
-        extra = f" · {summary}" if summary else ""
-        db.add_event(f"Оформлен {kind}: {result.order_ref} ({len(rows)} поз.{extra})")
+        db.add_event(f"Учебный заказ {result.order_ref}: {_order_lines_summary(rows)}")
         return {"ok": True, "order_ref": result.order_ref, "count": len(rows)}
-
-    for item in rows:
-        db.update_item(item["id"], status="failed")
-    db.add_event(result.error or "ошибка оформления", "error")
     return {"ok": False, "error": result.error}
 
 
@@ -551,6 +524,8 @@ def send_urgent_item(item_id: int) -> dict[str, Any]:
         raise KeyError("позиция не найдена")
     if not item["urgent"]:
         raise ValueError("позиция не срочная")
+    if item["status"] not in {"confirmed", "pending_review"}:
+        raise ValueError("позиция недоступна для отправки")
     settings = db.get_settings()
     if settings["training_mode"] and item["status"] != "confirmed":
         db.update_item(item_id, status="confirmed")
@@ -574,20 +549,20 @@ def process_due_lot(force: bool = False) -> dict[str, Any]:
     items = [
         i
         for i in db.list_items_for_lot(lot["id"])
-        if i["status"] not in {"rejected", "sent", "supplier_unknown"}
+        if i["status"] in {"confirmed", "pending_review"}
     ]
 
     if not items:
         return {"ok": True, "status": lot["status"], "skipped": True}
 
     sendable = [i for i in items if i["status"] == "confirmed"]
-    if not settings["training_mode"] or force:
+    if force:
         sendable = [i for i in items if i["status"] in {"confirmed", "pending_review"}]
         for item in sendable:
             if item["status"] == "pending_review":
                 db.update_item(item["id"], status="confirmed")
 
-    if settings["training_mode"] and not force:
+    if not force:
         db.update_lot(lot["id"], status="pending_approval")
         db.add_event("Лот готов. Нужно подтверждение руководителя перед отправкой.", "warn")
         return {"ok": True, "status": "pending_approval", "count": len(items)}
@@ -637,7 +612,7 @@ def send_selected_items(lot_id: int, item_ids: list[int]) -> dict[str, Any]:
             raise KeyError(f"позиция {item_id} не найдена")
         if item.get("lot_id") != lot_id:
             raise ValueError("позиция не из этого лота")
-        if item["status"] in {"rejected", "sent", "supplier_unknown"}:
+        if item["status"] not in {"confirmed", "pending_review"}:
             continue
         if not (item.get("supplier") or "").strip():
             continue
@@ -713,7 +688,7 @@ def snapshot() -> dict[str, Any]:
 
 def resend_request(request_id: int) -> dict[str, Any]:
     row = db.get_request(request_id)
-    if not row:
+    if not row or row["workspace"]:
         raise KeyError("заявка не найдена")
     text = (row.get("raw_text") or "").strip()
     if not text:

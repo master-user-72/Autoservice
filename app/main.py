@@ -6,12 +6,16 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import db, garage
+from app import db, garage, workspace
+from app import access
+from app.workspace_api import router as workspace_router
+from app.workspace_db import migrate
 from app.config import DATA_DIR, WEB_DIR
-from app.idle_shutdown import start_watchdog, touch as touch_client_activity
+from app.idle_shutdown import touch as touch_client_activity
 from app.log import setup_logging
 from app.lot_service import (
     approve_and_send_lot,
@@ -36,14 +40,26 @@ from app.scheduler import reschedule, start_scheduler, stop_scheduler
 async def lifespan(_app: FastAPI):
     setup_logging()
     db.init_db()
+    migrate()
+    workspace.tick()
     start_scheduler()
-    start_watchdog()
-    yield
-    stop_scheduler()
+    try:
+        yield
+    finally:
+        stop_scheduler()
 
 
 app = FastAPI(title="VIN Parts Agent", lifespan=lifespan)
+app.middleware("http")(access.guard)
+app.include_router(workspace_router)
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_input(_request: Request, exc: RequestValidationError):
+    return JSONResponse(status_code=422, content={"detail": [
+        {"loc": error["loc"], "msg": error["msg"], "type": error["type"]} for error in exc.errors()
+    ]})
 
 
 @app.middleware("http")
@@ -54,6 +70,23 @@ async def track_client_activity(request: Request, call_next):
 
 
 @app.get("/")
+@app.get("/requests")
+@app.get("/requests/{entry}")
+@app.get("/garage")
+@app.get("/garage/{entry}")
+@app.get("/lots")
+@app.get("/lots/{entry}")
+@app.get("/urgent")
+@app.get("/orders")
+@app.get("/orders/{entry}")
+@app.get("/suppliers")
+@app.get("/settings")
+@app.get("/login")
+def workspace_page() -> FileResponse:
+    return FileResponse(WEB_DIR / "workspace.html")
+
+
+@app.get("/classic")
 def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
 
@@ -226,10 +259,13 @@ def api_save_vehicle(body: VehicleBody) -> dict:
 
 
 @app.delete("/api/vehicles/{vin}")
-def api_delete_vehicle(vin: str) -> dict:
-    if not db.delete_vehicle(vin):
+def api_delete_vehicle(vin: str, request: Request) -> dict:
+    from app.workspace_api import Revision, archive_vehicle
+
+    row = db.get_vehicle_by_vin(vin)
+    if not row:
         raise HTTPException(404, "машина не найдена")
-    db.add_event(f"Гараж: удалён VIN {vin.upper()}", "warn")
+    archive_vehicle(request, row["vin"], Revision(revision=row["revision"]))
     return snapshot()
 
 

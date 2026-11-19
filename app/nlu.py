@@ -454,3 +454,38 @@ def parse_request(text: str) -> ParsedRequest:
     log.info("итог локальный: items=%s", local_items)
     return apply_quantity_hints(explode_parsed_items(parsed))
 
+
+
+def preview_parts(text: str) -> tuple[str | None, list[dict], str | None]:
+    """Conservative parser for an editable preview of multiword part names."""
+    vin = _clean_vin(text)
+    body = re.sub(rf"(?:\b(?:VIN|ВИН)\s*[:=]?\s*)?{vin}", "", text, flags=re.IGNORECASE) if vin else text
+    qty_pattern = re.compile(r"(?<!\w)(\d{1,3})\s*(?:шт\.?|штук(?:и|а)?|pcs)(?!\w)", re.IGNORECASE)
+    urgency = re.compile(r"\b(?:срочно|сегодня|немедленно)\b", re.IGNORECASE)
+    originality = re.compile(r"\b(?:оригинал\w*|oem|оем)\b", re.IGNORECASE)
+    urgent_all = bool(urgency.match(body.lstrip()))
+    items = []
+    uncertain = False
+    for part in re.split(r"[\n,;]+|\s+(?:и|плюс)\s+", body, flags=re.IGNORECASE):
+        quantity = qty_pattern.search(part) or re.match(r"^\s*(\d{1,2})\s+(?=[а-яё])", part, re.IGNORECASE)
+        name = part
+        if quantity:
+            name = part[:quantity.start()] + " " + part[quantity.end():]
+            uncertain |= not 1 <= int(quantity[1]) <= 99
+        name = originality.sub(" ", urgency.sub(" ", name))
+        name = re.sub(r"^\s*(?:нужн[аоыи]|закаж\w+)\s+", "", name, flags=re.IGNORECASE)
+        name = _normalize_part_description(name)
+        if not any(c.isalpha() for c in name):
+            continue
+        uncertain |= bool(re.search(r"\b\d{1,2}\s*(?:-|или)\s*\d{1,2}\b", name))
+        items.append({
+            "description": name[:300], "quantity": max(1, min(99, int(quantity[1]))) if quantity else 1,
+            "urgent": urgent_all or bool(urgency.search(part)), "original_required": bool(originality.search(part)),
+        })
+    question = "Уточните, какие запчасти нужны." if not items else None
+    if uncertain:
+        question = "Уточните количество. Перед сохранением проверьте разбор."
+    if len(items) > 100:
+        items = items[:100]
+        question = "Разбор ограничен первыми 100 позициями. Остальные добавьте отдельной заявкой."
+    return vin, items, question

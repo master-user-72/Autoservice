@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17263d">
+  <title>AUTOSERVICE</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/workspace.css">
+  <script type="module" src="/static/workspace.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">Перейти к рабочей области</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/requests"><span class="brand-icon" aria-hidden="true"></span><span><strong>AUTOSERVICE</strong><small>Автосервис · Запчасти</small></span></a>
+      <nav id="nav" aria-label="Разделы"></nav>
+    </aside>
+    <header class="header">
+      <h1 id="title">Заявки и поиск</h1>
+      <div class="header-tools" id="header-tools"></div>
+    </header>
+    <main id="content" tabindex="-1" aria-live="polite"><div class="empty panel">Загрузка рабочего пространства…</div></main>
+    <footer id="statusbar" class="statusbar"></footer>
+  </div>
+  <div id="notice" class="toast" role="status" hidden></div>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+</body>
+</html>

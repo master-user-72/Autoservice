@@ -16,7 +16,7 @@ function isArchivePage() {
 
 function navigateTo(path) {
   const qs = location.search || "";
-  const next = path === "/archive" ? `/archive${qs}` : `/${qs}`;
+  const next = path === "/archive" ? `/archive${qs}` : `/classic${qs}`;
   history.pushState({ page: path }, "", next);
   applyPageView();
   if (path === "/archive") loadArchive($("archiveDate")?.value);
@@ -581,7 +581,7 @@ function renderGarage(rows) {
       fillKitForm();
     });
     if (editing) editBtn.className = "primary";
-    const del = btn("Удалить", () => api(`/api/vehicles/${row.vin}`, { method: "DELETE" }).then((data) => {
+    const del = btn("В архив", () => api(`/api/vehicles/${row.vin}`, { method: "DELETE" }).then((data) => {
       if (editingVin === row.vin) editingVin = null;
       applySnapshot(data);
     }));

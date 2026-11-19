@@ -56,7 +56,7 @@ if (Test-Path $pidFile) {
     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
 }
 
-$env:AGENT_SHUTDOWN_ON_CLOSE = "1"
+$env:PYTHONDONTWRITEBYTECODE = "1"
 $proc = Start-Process -FilePath $py -ArgumentList @(
     "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8080"
 ) -PassThru -WindowStyle Hidden -WorkingDirectory $root
@@ -92,11 +92,7 @@ if ($browser) {
 
 Open-Browser -browserPath $browser -targetUrl $url -launchMode $Mode
 
-if ($Mode -eq "tab") {
-    Write-Host "Close the agent tab to stop the server."
-} else {
-    Write-Host "Close the agent window to stop the server."
-}
+Write-Host "The server keeps running after the browser closes so the daily lot can close on schedule."
 
 try {
     Wait-Process -Id $proc.Id

@@ -7,3 +7,5 @@ playwright>=1.49.0
 python-multipart>=0.0.12
 pydantic>=2.10.0
 # Whisper опционален: pip install faster-whisper (основной ввод — речь в браузере)
+
+tzdata>=2024.1

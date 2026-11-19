@@ -327,7 +327,7 @@ def get_or_create_today_lot() -> dict[str, Any]:
         row = conn.execute("SELECT * FROM lots WHERE lot_date = ?", (lot_date,)).fetchone()
         if row is None:
             conn.execute(
-                "INSERT INTO lots(lot_date, status, created_at) VALUES (?, ?, ?)",
+                "INSERT OR IGNORE INTO lots(lot_date, status, created_at) VALUES (?, ?, ?)",
                 (lot_date, "collecting", now_iso()),
             )
             row = conn.execute("SELECT * FROM lots WHERE lot_date = ?", (lot_date,)).fetchone()
@@ -406,7 +406,7 @@ def insert_item(data: dict[str, Any]) -> int:
 
 def get_item(item_id: int) -> Optional[dict[str, Any]]:
     with locked() as conn:
-        row = conn.execute("SELECT * FROM line_items WHERE id = ?", (item_id,)).fetchone()
+        row = conn.execute("SELECT * FROM line_items WHERE id = ? AND status NOT LIKE 'workspace_%'", (item_id,)).fetchone()
     return row_to_dict(row)
 
 
@@ -416,7 +416,11 @@ def update_item(item_id: int, **fields: Any) -> None:
     assignments = ", ".join(f"{k} = ?" for k in fields)
     values = list(fields.values()) + [item_id]
     with locked() as conn:
-        conn.execute(f"UPDATE line_items SET {assignments} WHERE id = ?", values)
+        conn.execute(
+            f"UPDATE line_items SET {assignments} WHERE id = ? "
+            "AND status NOT IN ('sent','failed','sending','outcome_unknown') AND status NOT LIKE 'workspace_%'",
+            values,
+        )
 
 
 _ITEM_SELECT = """
@@ -451,6 +455,7 @@ def list_urgent_open() -> list[dict[str, Any]]:
             _ITEM_SELECT
             + """
             WHERE line_items.urgent = 1 AND line_items.status NOT IN ('sent', 'rejected')
+              AND NOT EXISTS (SELECT 1 FROM requests r WHERE r.id = line_items.request_id AND r.status LIKE 'workspace_%')
             ORDER BY line_items.id DESC
             """
         ).fetchall()
@@ -466,7 +471,7 @@ def get_request(request_id: int) -> Optional[dict[str, Any]]:
 def list_request_dates() -> list[str]:
     with locked() as conn:
         rows = conn.execute(
-            "SELECT DISTINCT substr(created_at, 1, 10) AS d FROM requests ORDER BY d DESC"
+            "SELECT DISTINCT substr(created_at, 1, 10) AS d FROM requests WHERE workspace=0 ORDER BY d DESC"
         ).fetchall()
     return [str(r["d"]) for r in rows if r["d"]]
 
@@ -484,7 +489,7 @@ def list_requests_on_date(day: str) -> list[dict[str, Any]]:
                    COALESCE(vehicles.engine, '') AS vehicle_engine
             FROM requests
             LEFT JOIN vehicles ON vehicles.vin = requests.vin
-            WHERE substr(requests.created_at, 1, 10) = ?
+            WHERE requests.workspace=0 AND substr(requests.created_at, 1, 10) = ?
             ORDER BY requests.id DESC
             """,
             (day,),
@@ -535,7 +540,7 @@ def latest_open_question() -> Optional[str]:
     with locked() as conn:
         row = conn.execute(
             """
-            SELECT clarifying_question, status FROM requests
+            SELECT clarifying_question, status FROM requests WHERE workspace=0
             ORDER BY id DESC LIMIT 1
             """
         ).fetchone()
@@ -554,15 +559,15 @@ def list_vehicles(query: str = "") -> list[dict[str, Any]]:
             rows = conn.execute(
                 """
                 SELECT * FROM vehicles
-                WHERE vin LIKE ? OR make LIKE ? OR plate LIKE ?
+                WHERE archived=0 AND (vin LIKE ? OR make LIKE ? OR plate LIKE ?
                    OR model LIKE ? OR engine LIKE ? OR year LIKE ? OR spec_key LIKE ?
-                   OR (? != '' AND instr(plate_digits, ?) > 0)
+                   OR (? != '' AND instr(plate_digits, ?) > 0))
                 ORDER BY make, model, plate
                 """,
                 (like.upper(), like, like.upper(), like, like, like, like.upper(), digits, digits),
             ).fetchall()
         else:
-            rows = conn.execute("SELECT * FROM vehicles ORDER BY make, model, plate").fetchall()
+            rows = conn.execute("SELECT * FROM vehicles WHERE archived=0 ORDER BY make, model, plate").fetchall()
     return [dict(r) for r in rows]
 
 
@@ -574,7 +579,7 @@ def get_vehicle_by_vin(vin: str) -> Optional[dict[str, Any]]:
 
 def get_vehicle_by_plate(plate: str) -> Optional[dict[str, Any]]:
     with locked() as conn:
-        row = conn.execute("SELECT * FROM vehicles WHERE plate = ?", (plate.upper(),)).fetchone()
+        row = conn.execute("SELECT * FROM vehicles WHERE plate = ? AND archived=0", (plate.upper(),)).fetchone()
     return row_to_dict(row)
 
 
@@ -586,7 +591,7 @@ def find_vehicles_by_digits(digits: str) -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT * FROM vehicles
-            WHERE plate_digits != '' AND instr(plate_digits, ?) > 0
+            WHERE archived=0 AND plate_digits != '' AND instr(plate_digits, ?) > 0
             ORDER BY make, plate
             """,
             (digits,),
@@ -595,7 +600,7 @@ def find_vehicles_by_digits(digits: str) -> list[dict[str, Any]]:
     if hits:
         return hits
     with locked() as conn:
-        rows = conn.execute("SELECT * FROM vehicles WHERE plate != ''").fetchall()
+        rows = conn.execute("SELECT * FROM vehicles WHERE archived=0 AND plate != ''").fetchall()
     out = []
     for row in rows:
         pdata = "".join(ch for ch in (row["plate"] or "") if ch.isdigit())
@@ -607,7 +612,7 @@ def find_vehicles_by_digits(digits: str) -> list[dict[str, Any]]:
 def find_vehicles_by_make(make: str) -> list[dict[str, Any]]:
     with locked() as conn:
         rows = conn.execute(
-            "SELECT * FROM vehicles WHERE lower(make) = lower(?) ORDER BY plate",
+            "SELECT * FROM vehicles WHERE archived=0 AND lower(make) = lower(?) ORDER BY plate",
             (make.strip(),),
         ).fetchall()
     return [dict(r) for r in rows]
@@ -634,13 +639,13 @@ def upsert_vehicle(*, vin: str, make: str = "", plate: str = "", **spec: Any) ->
     for key in VEHICLE_SPEC_FIELDS:
         update_params.extend([values[key], values[key]])
     with locked() as conn:
-        if plate:
-            conn.execute(
-                "UPDATE vehicles SET plate = '', plate_digits = '' WHERE plate = ? AND vin != ?",
-                (plate, vin),
-            )
-        existing = conn.execute("SELECT id FROM vehicles WHERE vin = ?", (vin,)).fetchone()
+        existing = conn.execute("SELECT * FROM vehicles WHERE vin = ?", (vin,)).fetchone()
         if existing:
+            if any(values[key] and values[key] != existing[key] for key in VEHICLE_SPEC_FIELDS):
+                from app.workspace import invalidate_vehicle
+
+                invalidate_vehicle(conn, vin)
+                conn.execute("UPDATE vehicles SET revision=revision+1 WHERE vin=?", (vin,))
             conn.execute(
                 f"""
                 UPDATE vehicles

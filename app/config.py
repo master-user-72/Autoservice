@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env", override=True)
 
-DATA_DIR = ROOT / "data"
+DATA_DIR = Path(os.getenv("AUTOSERVICE_DATA_DIR", str(ROOT / "data"))).expanduser().resolve()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 WEB_DIR = ROOT / "web"
@@ -43,9 +43,9 @@ LLM_NONSTANDARD_ONLY = os.getenv("LLM_NONSTANDARD_ONLY", "1").strip() != "0"
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
 
 CITY = os.getenv("CITY", "Тюмень").strip() or "Тюмень"
-VIN_DECODE_LIVE = os.getenv("VIN_DECODE_LIVE", "1").strip() != "0"
+VIN_DECODE_LIVE = os.getenv("VIN_DECODE_LIVE", "0").strip() != "0"
 
-SUPPLIER_ADAPTER = os.getenv("SUPPLIER_ADAPTER", "live").strip().lower()
+SUPPLIER_ADAPTER = os.getenv("SUPPLIER_ADAPTER", "mock").strip().lower()
 SUPPLIER_NAME = os.getenv("SUPPLIER_NAME", "Поставщики Тюмень")
 SUPPLIER_LOGIN_URL = os.getenv("SUPPLIER_LOGIN_URL", "").strip()
 SUPPLIER_USER = os.getenv("SUPPLIER_USER", "").strip()

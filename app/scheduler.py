@@ -3,7 +3,7 @@ from __future__ import annotations
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app import db
+from app import db, workspace
 from app.lot_service import maybe_catch_up, process_due_lot
 
 _scheduler: BackgroundScheduler | None = None
@@ -31,6 +31,7 @@ def start_scheduler() -> None:
         return
     _scheduler = BackgroundScheduler()
     reschedule()
+    _scheduler.add_job(workspace.tick, "interval", seconds=15, id="workspace_lots")
     _scheduler.start()
     maybe_catch_up()
 
